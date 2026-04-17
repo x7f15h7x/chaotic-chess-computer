@@ -1,0 +1,274 @@
+import chess
+import random
+import time
+import math
+from math import inf
+
+QUOTES = [
+    "'The king is dead. Long live the king.' - classic medieval vibe",
+    "'Checkmate, you fool!' - every chess villain ever",
+    "'The game was rigged from the start.' - Fallout: New Vegas",
+    "'War. War never changes.' - Fallout series",
+    "'All your base are belong to us.' - Zero Wing",
+    "'I see dead people... on the board.' - The Sixth Sense twist",
+    "'You shall not pass!' - Gandalf, The Lord of the Rings",
+    "'The force is strong with this one.' - Star Wars",
+    "'I've got a bad feeling about this.' - Han Solo, Star Wars",
+    "'May the odds be ever in your favor.' - The Hunger Games",
+    "'Winter is coming... for your king.' - Game of Thrones",
+    "'One does not simply walk into checkmate.' - Boromir meme",
+    "'I am inevitable.' - Thanos, Avengers",
+    "'It's over 9000!' - Dragon Ball Z (when queen is lost)",
+    "'You have my sword... and my rook.' - Lord of the Rings style",
+    "'The night is dark and full of terrors.' - Game of Thrones",
+    "'Resistance is futile.' - Borg, Star Trek",
+    "'I love the smell of captured pieces in the morning.' - Apocalypse Now twist",
+    "'Hasta la vista, baby.' - Terminator (after a capture)",
+    "'You can't handle the truth... or this endgame.' - A Few Good Men",
+    "'I'm gonna make him an offer he can't refuse.' - The Godfather",
+    "'The cake is a lie... but this check isn't.' - Portal",
+    "'Stay on target... stay on target.' - Star Wars trench run",
+    "'Do you feel in charge?' - Bane, The Dark Knight Rises",
+    "'Why so serious?' - Joker, The Dark Knight",
+    "'I am the one who knocks.' - Walter White, Breaking Bad",
+    "'Elementary, my dear Watson.' - Sherlock Holmes",
+    "'The pieces are set. The game begins.' - The Queen's Gambit",
+    "'Chaos is a ladder.' - Littlefinger, Game of Thrones",
+    "'You know nothing, Jon Snow... about this position.' - Game of Thrones",
+    "'Finish him!' - Mortal Kombat",
+    "'Hadouken!' - Street Fighter (for a wild attack)",
+    "'Get over here!' - Scorpion, Mortal Kombat",
+    "'The best move is the one they don't see coming.' - my own chaos motto",
+    "'In the end, it doesn't even matter.' - Linkin Park (draw vibe)",
+    "'This is the way.' - The Mandalorian",
+    "'Live long and prosper... unless you're in check.' - Star Trek",
+    "'Beam me up, Scotty... away from this board.' - Star Trek",
+    "'There is no spoon... or safe king.' - The Matrix",
+    "'I know kung fu... and chess.' - The Matrix",
+    "'Red pill or blue pill? I pick checkmate.' - The Matrix",
+    "'We're gonna need a bigger board.' - Jaws twist",
+    "'You either die a hero or live long enough to see yourself get checkmated.' - The Dark Knight",
+    "'I'm Batman.' - after a sneaky move",
+    "'Why did it have to be snakes... or knights?' - Indiana Jones",
+    "'I am Iron Man.' - Tony Stark (when queen is out)",
+    "'Avengers assemble... the pawns!' - Marvel",
+    "'It's clobberin' time!' - The Thing, Fantastic Four",
+    "'With great power comes great endgames.' - Spider-Man",
+    "'Hulk smash... your defense!' - Avengers",
+    "'I am Groot... and I take your rook.' - Guardians of the Galaxy",
+    "'The enemy of my enemy is my next victim.' - ancient proverb vibe",
+    "'Fortune favors the bold... and the chaotic.' - my engine motto",
+    "'No plan survives first contact with the enemy.' - Helmuth von Moltke",
+    "'Keep your friends close, but your king closer.' - The Godfather twist",
+    "'Et tu, Brute?' - after a betrayal capture",
+    "'To be or not to be... in check.' - Shakespeare",
+    "'All the world's a stage... and this is my checkmate.' - Shakespeare",
+    "'Cry havoc and let slip the dogs of war.' - Shakespeare",
+    "'A horse! A horse! My kingdom for a knight!' - Richard III twist",
+    "'The die is cast.' - Julius Caesar",
+    "'Veni, vidi, vici... your pieces.' - Julius Caesar",
+    "'I came, I saw, I sacrificed.' - my chaotic style",
+    "'One small step for man... one giant leap for my attack.' - Neil Armstrong twist",
+    "'Houston, we have a problem... your king is exposed.' - Apollo 13",
+    "'May the force be with you... not your opponent.' - Star Wars",
+    "'These aren't the moves you're looking for.' - Obi-Wan mind trick",
+    "'The trash will be compacted... like your position.' - Wall-E",
+    "'To infinity and beyond... your king!' - Toy Story",
+    "'There's no crying in chess!' - A League of Their Own twist",
+    "'Show me the money... or the checkmate.' - Jerry Maguire",
+    "'You had me at hello... and check.' - Jerry Maguire",
+    "'Nobody puts baby in a corner... or my king.' - Dirty Dancing",
+    "'I'm king of the world!' - Titanic (when winning)",
+    "'I'll never let go... of this advantage.' - Titanic",
+    "'Here's looking at you, kid... across the board.' - Casablanca",
+    "'We'll always have checkmate.' - Casablanca twist",
+    "'Play it again, Sam... but better.' - Casablanca",
+    "'Round up the usual suspects... and capture them.' - Casablanca",
+    "'Of all the chessboards in all the world...' - Casablanca vibe",
+    "'You must be the change you wish to see... in the endgame.' - Gandhi",
+    "'The best revenge is massive counterplay.' - my own",
+    "'Insanity is doing the same move twice... so I never do.' - my chaos rule",
+    "'What we do in life echoes in eternity... and on the board.' - Gladiator",
+    "'Are you not entertained?!' - Gladiator (after a sacrifice)",
+    "'My name is Maximus... Decimus Meridius... and I take your queen.' - Gladiator",
+    "'At my signal, unleash hell... on the center.' - Gladiator",
+    "'What we do in life echoes in checkmate.' - Gladiator twist"
+]
+
+def judge_the_position(current_game: chess.Board) -> float:
+    worth = {chess.PAWN: 100, chess.KNIGHT: 320, chess.BISHOP: 330, chess.ROOK: 500, chess.QUEEN: 900, chess.KING: 20000}
+    
+    piece_total = sum(
+        (worth.get(item.piece_type, 0) * (1 if item.color == chess.WHITE else -1))
+        for item in current_game.piece_map().values()
+    )
+    
+    hot_spots = [chess.D4, chess.D5, chess.E4, chess.E5]
+    middle_boost = sum(
+        15 if current_game.piece_at(spot) and current_game.piece_at(spot).color == current_game.turn else -5
+        for spot in hot_spots
+    )
+    
+    wild_factor = random.gauss(0, 50 if current_game.is_check() else 30)
+    
+    return float(piece_total + middle_boost + wild_factor)
+
+def scan_moves(current_game: chess.Board, steps_left: int, bottom: float, top: float) -> float:
+    if steps_left == 0 or current_game.is_game_over():
+        return judge_the_position(current_game)
+    
+    if current_game.turn == chess.WHITE:
+        top_score = -inf
+        for option in current_game.legal_moves:
+            current_game.push(option)
+            result = scan_moves(current_game, steps_left - 1, bottom, top)
+            current_game.pop()
+            top_score = max(top_score, result)
+            bottom = max(bottom, result)
+            if top <= bottom:
+                break
+        return top_score
+    else:
+        low_score = inf
+        for option in current_game.legal_moves:
+            current_game.push(option)
+            result = scan_moves(current_game, steps_left - 1, bottom, top)
+            current_game.pop()
+            low_score = min(low_score, result)
+            top = min(top, result)
+            if top <= bottom:
+                break
+        return low_score
+
+# computer picks its next action - checks options then randomly picks from the decent ones
+def decide_computer_move(current_game: chess.Board, depth=3, randomness=0.8) -> chess.Move | None:
+    if current_game.is_game_over():
+        return None
+    
+    choices = list(current_game.legal_moves)
+    if not choices:
+        return None
+    
+    results = []
+    is_white_turn_now = current_game.turn == chess.WHITE
+    
+    for pick in choices:
+        current_game.push(pick)
+        base = scan_moves(current_game, depth - 1, -inf, inf)
+        current_game.pop()
+        
+        if not is_white_turn_now:
+            base = -base
+        results.append(base)
+    
+    if randomness <= 0.01:
+        return choices[results.index(max(results))]
+    
+    peak = max(results)
+    boosted = [math.exp((val - peak) / randomness) for val in results]
+    combined = sum(boosted)
+    odds = [b / combined for b in boosted]
+    
+    selected = random.choices(range(len(choices)), weights=odds, k=1)[0]
+    return choices[selected]
+
+def show_chessboard(current_game: chess.Board) -> None:
+    print("    a b c d e f g h")
+    for rank in range(7, -1, -1):
+        row = f"{rank + 1}  "
+        for file in range(8):
+            pos = chess.square(file, rank)
+            thing = current_game.piece_at(pos)
+            row += (thing.symbol() if thing else ".") + " "
+        print(row)
+    print("    a b c d e f g h\n")
+
+# the game itself
+def main() -> None:
+    current_game = chess.Board()
+    
+    print("hi this is the chess thing i built")
+    while True:
+        answer = input("you wanna be white (w) or black (b)? ").strip().lower()
+        if answer in ["w", "white"]:
+            player_is_white = True
+            break
+        elif answer in ["b", "black"]:
+            player_is_white = False
+            break
+        print("come on just w or b")
+    
+    print(f"\nalright you are {'white' if player_is_white else 'black'}")
+    print("i'll play the opposite side and might do some totally random stuff\n")
+    
+    print("╔══════════════════════════════════════════════════════════════╗")
+    print(f"║  {name}'s own chess program - decent strength, total chaos   ║")
+    print("╚══════════════════════════════════════════════════════════════╝")
+    print("type moves like e2e4 or Nf3   or just 'quit' to leave\n")
+    
+    while not current_game.is_game_over():
+        print("\n" + "=" * 60)
+        show_chessboard(current_game)
+        print("=" * 60)
+        
+        if (current_game.turn == chess.WHITE and player_is_white) or (current_game.turn == chess.BLACK and not player_is_white):
+            # player input
+            while True:
+                typed = input("your move → ").strip().lower()
+                if typed == "quit":
+                    print("you tapped out haha fair enough")
+                    return
+                try:
+                    tried = chess.Move.from_uci(typed)
+                    if current_game.is_legal(tried):
+                        current_game.push(tried)
+                        print("   " + random.choice(QUOTES))
+                        break
+                except:
+                    pass
+                try:
+                    tried = current_game.parse_san(typed)
+                    current_game.push(tried)
+                    print("   " + random.choice(QUOTES))
+                    break
+                except:
+                    print("   oops that move isn't legal here")
+        else:
+            # computer turn
+            print("computer is deciding... (could be smart or completely nuts)")
+            start_clock = time.time()
+            move_picked = decide_computer_move(current_game, depth=3, randomness=0.8)
+            if move_picked:
+                current_game.push(move_picked)
+                print(f"computer played: {current_game.san(move_picked)}  [{time.time() - start_clock:.2f}s]")
+                print("   " + random.choice(QUOTES))
+                if random.random() < 0.35:
+                    print("   (board is getting intense...)")
+            else:
+                print("computer has no moves for some reason")
+        
+    print("\n" + "═" * 60)
+    print("GAME OVER")
+    end_result = current_game.result()
+    
+    if end_result == "1-0":
+        who_won = "you" if player_is_white else "computer"
+    elif end_result == "0-1":
+        who_won = "you" if not player_is_white else "computer"
+    else:
+        who_won = None
+    
+    if who_won == "you":
+        print("you beat my program! nice work")
+    elif who_won == "computer":
+        print("computer took the win - it went full wild")
+    else:
+        print("draw... the crazy finally settled")
+    
+    show_chessboard(current_game)
+    print("thanks for playing what i coded myself!")
+
+if __name__ == "__main__":
+    # put your name on the next line
+    name = "Your Name Here"   # example: name = "Ed Low"
+    main()
